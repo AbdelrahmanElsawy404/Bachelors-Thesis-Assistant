@@ -82,6 +82,5 @@ inputs: ResearchState = {
 
 }
 
-result = graph.invoke(inputs)
-
-print(result)
+for update in graph.stream(inputs, stream_mode="updates"):
+    print(update)
