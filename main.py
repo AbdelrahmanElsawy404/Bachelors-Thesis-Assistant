@@ -7,7 +7,21 @@ class ResearchState(TypedDict):
     description: str
     brief: str
     outline: str
+    input_valid: bool
 
+
+def validate_input(state: ResearchState):
+    input_valid = bool (
+        state["title"].strip() and state["description"].strip()
+    )
+    return {"input_valid": input_valid}
+
+
+def route_after_validation(state: ResearchState):
+    if state["input_valid"]:
+        return "prepare_brief"
+    else:
+        return END
 
 def prepare_brief(state: ResearchState):
     brief = (
@@ -29,11 +43,21 @@ def create_outline(state: ResearchState):
 
 builder = StateGraph(ResearchState)
 
-builder.add_node("prepare_brief", prepare_brief)
 
+
+builder.add_node("validate_input", validate_input)
+builder.add_node("prepare_brief", prepare_brief)
 builder.add_node("create_outline", create_outline)
 
-builder.add_edge(START, "prepare_brief")
+
+builder.add_edge(START, "validate_input")
+
+builder.add_conditional_edges(
+    "validate_input",
+    route_after_validation
+)
+
+
 builder.add_edge("prepare_brief", "create_outline")
 builder.add_edge("create_outline", END)
 
@@ -43,7 +67,9 @@ inputs: ResearchState = {
     "title": "AI in Software Testing",
     "description": "Comparing how AI tools support software testing.",
     "brief": "",
-    "outline": ""
+    "outline": "",
+    "input_valid": False
+
 }
 
 result = graph.invoke(inputs)
