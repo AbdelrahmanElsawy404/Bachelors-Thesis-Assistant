@@ -8,13 +8,22 @@ class ResearchState(TypedDict):
     brief: str
     outline: str
     input_valid: bool
+    validation_errors: list[str]
 
 
 def validate_input(state: ResearchState):
-    input_valid = bool (
-        state["title"].strip() and state["description"].strip()
-    )
-    return {"input_valid": input_valid}
+    errors = []
+
+    if not state["title"].strip():
+        errors.append("Research title is required.")
+
+    if not state["description"].strip():
+        errors.append("Research description is required.")
+
+    return {
+        "validation_errors": errors,
+        "input_valid": len(errors) == 0,
+    }
 
 
 def route_after_validation(state: ResearchState):
@@ -68,7 +77,8 @@ inputs: ResearchState = {
     "description": "Comparing how AI tools support software testing.",
     "brief": "",
     "outline": "",
-    "input_valid": False
+    "input_valid": False,
+    "validation_errors": []
 
 }
 
