@@ -6,6 +6,7 @@ class ResearchState(TypedDict):
     title: str
     description: str
     brief: str
+    outline: str
 
 
 def prepare_brief(state: ResearchState):
@@ -16,20 +17,33 @@ def prepare_brief(state: ResearchState):
 
     return {"brief": brief}
 
+def create_outline(state: ResearchState):
+    outline = (
+        f"{state['brief']}\n\n"
+        "Introduction\n"
+        "Background\n"
+        "Conclusion"
+    )
+    return {"outline": outline}
+
 
 builder = StateGraph(ResearchState)
 
 builder.add_node("prepare_brief", prepare_brief)
 
+builder.add_node("create_outline", create_outline)
+
 builder.add_edge(START, "prepare_brief")
-builder.add_edge("prepare_brief", END)
+builder.add_edge("prepare_brief", "create_outline")
+builder.add_edge("create_outline", END)
 
 graph = builder.compile()
 
 inputs: ResearchState = {
     "title": "AI in Software Testing",
     "description": "Comparing how AI tools support software testing.",
-    "brief": ""
+    "brief": "",
+    "outline": ""
 }
 
 result = graph.invoke(inputs)
