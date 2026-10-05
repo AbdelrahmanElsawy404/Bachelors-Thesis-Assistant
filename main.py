@@ -1,4 +1,6 @@
 from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+
 from typing import TypedDict
 
 
@@ -117,7 +119,10 @@ builder.add_conditional_edges(
 builder.add_edge("revise_outline", "review_outline")
 
 
-graph = builder.compile()
+
+checkpointer = InMemorySaver()
+
+graph = builder.compile(checkpointer = checkpointer)
 
 inputs: ResearchState = {
     "title": "AI in Software Testing",
@@ -132,5 +137,18 @@ inputs: ResearchState = {
     "max_revisions": 2
 }
 
-for update in graph.stream(inputs, stream_mode="updates"):
+config = {
+    "configurable": {
+        "thread_id": "demo-1"
+    }
+}
+
+for update in graph.stream(
+    inputs,
+    config = config,
+    stream_mode="updates"
+    ):
     print(update)
+
+snapshot = graph.get_state(config)
+print(snapshot.values)

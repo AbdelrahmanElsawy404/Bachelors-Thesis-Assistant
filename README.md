@@ -12,6 +12,7 @@ The goal is to help students organize research, work with sources, and review se
 - Review whether the outline includes a Methodology heading.
 - Revise the outline with a configurable revision limit.
 - Stream node updates to the terminal.
+- Save and inspect workflow state using an in-memory checkpointer.
 
 The current version does not use language models or process research sources yet.
 
@@ -66,6 +67,7 @@ Edit the example `inputs` dictionary in `main.py` to try different titles, descr
 - Graph compilation and execution
 - Streaming updates
 - Review loops with bounded revisions
+- Save and inspect workflow state using an in-memory checkpointer.
 
 ## Planned Features
 
