@@ -2,6 +2,7 @@ from langgraph.graph import StateGraph, START, END
 from typing import TypedDict
 
 
+
 class ResearchState(TypedDict):
     title: str
     description: str
@@ -9,6 +10,10 @@ class ResearchState(TypedDict):
     outline: str
     input_valid: bool
     validation_errors: list[str]
+    outline_approved: bool
+    review_feedback: str
+    revision_count: int
+    max_revisions: int
 
 
 def validate_input(state: ResearchState):
@@ -49,26 +54,68 @@ def create_outline(state: ResearchState):
     )
     return {"outline": outline}
 
+def review_outline(state: ResearchState):
+    lines = state["outline"].splitlines()
+
+    if "Methodology" in lines:
+        return {
+            "outline_approved": True,
+            "review_feedback": "Outline meets the demo requirements."
+        }
+    return {
+        "outline_approved": False,
+        "review_feedback": "Add a Methodology section."
+    }
+
+
+def revise_outline(state: ResearchState):
+    revised_outline = state["outline"].replace(
+        "Conclusion",
+        "Methodology\nConclusion"
+    )
+
+    return {
+        "outline": revised_outline,
+        "revision_count": state["revision_count"] + 1
+    }
+
+
+def route_after_review(state: ResearchState):
+    if state["outline_approved"]:
+        return END
+
+    if state["revision_count"] >= state["max_revisions"]:
+        return END
+
+    return "revise_outline"
+
 
 builder = StateGraph(ResearchState)
 
 
-
+############# Create Nodes ############# 
 builder.add_node("validate_input", validate_input)
 builder.add_node("prepare_brief", prepare_brief)
 builder.add_node("create_outline", create_outline)
+builder.add_node("review_outline", review_outline)
+builder.add_node("revise_outline", revise_outline)
 
+
+############# Create edges ############# 
 
 builder.add_edge(START, "validate_input")
-
 builder.add_conditional_edges(
     "validate_input",
     route_after_validation
 )
-
-
 builder.add_edge("prepare_brief", "create_outline")
-builder.add_edge("create_outline", END)
+builder.add_edge("create_outline", "review_outline")
+builder.add_conditional_edges(
+    "review_outline",
+    route_after_review
+)
+builder.add_edge("revise_outline", "review_outline")
+
 
 graph = builder.compile()
 
@@ -78,8 +125,11 @@ inputs: ResearchState = {
     "brief": "",
     "outline": "",
     "input_valid": False,
-    "validation_errors": []
-
+    "validation_errors": [],
+    "outline_approved": False,
+    "review_feedback": "",
+    "revision_count": 0,
+    "max_revisions": 2
 }
 
 for update in graph.stream(inputs, stream_mode="updates"):
