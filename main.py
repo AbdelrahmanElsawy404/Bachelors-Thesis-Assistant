@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.types import interrupt, Command
 
 from typing import TypedDict
 
@@ -16,6 +17,7 @@ class ResearchState(TypedDict):
     review_feedback: str
     revision_count: int
     max_revisions: int
+    student_decision: str
 
 
 def validate_input(state: ResearchState):
@@ -82,12 +84,23 @@ def revise_outline(state: ResearchState):
     }
 
 
+
+def student_review(state: ResearchState):
+    decision = interrupt({
+        "outline": state["outline"],
+        "outline_approved": state["outline_approved"],
+        "review_feedback": state["review_feedback"],
+    })
+    return {
+        "student_decision": decision
+    }
+
 def route_after_review(state: ResearchState):
     if state["outline_approved"]:
-        return END
+        return "student_review"
 
     if state["revision_count"] >= state["max_revisions"]:
-        return END
+        return "student_review"
 
     return "revise_outline"
 
@@ -101,7 +114,7 @@ builder.add_node("prepare_brief", prepare_brief)
 builder.add_node("create_outline", create_outline)
 builder.add_node("review_outline", review_outline)
 builder.add_node("revise_outline", revise_outline)
-
+builder.add_node("student_review", student_review)
 
 ############# Create edges ############# 
 
@@ -116,7 +129,9 @@ builder.add_conditional_edges(
     "review_outline",
     route_after_review
 )
+
 builder.add_edge("revise_outline", "review_outline")
+builder.add_edge("student_review", END)
 
 
 
@@ -134,7 +149,8 @@ inputs: ResearchState = {
     "outline_approved": False,
     "review_feedback": "",
     "revision_count": 0,
-    "max_revisions": 2
+    "max_revisions": 2,
+    "student_decision": "pending"
 }
 
 config = {
@@ -152,3 +168,29 @@ for update in graph.stream(
 
 snapshot = graph.get_state(config)
 print(snapshot.values)
+print(snapshot.next)
+
+
+student_input = input(
+    "\nEnter student decision (approved/rejected): "
+).strip().lower()
+
+while student_input not in ("approved", "rejected"):
+    print("Invalid decision. Please enter 'approved' or 'rejected'.")
+    student_input = input(
+        "Enter student decision (approved/rejected): "
+    ).strip().lower()
+
+resume_command = Command(resume=student_input)
+
+for update in graph.stream(
+    resume_command,
+    config=config,
+    stream_mode= "updates"
+ ):
+    print(update)
+
+
+snapshot = graph.get_state(config)
+print(snapshot.values)
+print(snapshot.next)
