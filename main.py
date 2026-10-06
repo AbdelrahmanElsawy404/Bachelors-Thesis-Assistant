@@ -171,24 +171,25 @@ print(snapshot.values)
 print(snapshot.next)
 
 
-student_input = input(
-    "\nEnter student decision (approved/rejected): "
-).strip().lower()
-
-while student_input not in ("approved", "rejected"):
-    print("Invalid decision. Please enter 'approved' or 'rejected'.")
+if "student_review" in snapshot.next:
     student_input = input(
-        "Enter student decision (approved/rejected): "
+        "\nEnter student decision (approved/rejected): "
     ).strip().lower()
 
-resume_command = Command(resume=student_input)
+    while student_input not in ("approved", "rejected"):
+        print("Invalid decision. Please enter 'approved' or 'rejected'.")
+        student_input = input(
+            "Enter student decision (approved/rejected): "
+        ).strip().lower()
 
-for update in graph.stream(
-    resume_command,
-    config=config,
-    stream_mode= "updates"
- ):
-    print(update)
+    resume_command = Command(resume=student_input)
+
+    for update in graph.stream(
+        resume_command,
+        config=config,
+        stream_mode= "updates"
+    ):
+        print(update)
 
 
 snapshot = graph.get_state(config)
