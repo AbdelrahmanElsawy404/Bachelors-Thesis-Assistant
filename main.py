@@ -192,6 +192,12 @@ if "student_review" in snapshot.next:
             "Enter your feedback: "
         ).strip()
 
+        while not student_feedback:
+            print("Feedback is required when rejecting the outline.")
+            student_feedback = input(
+                "Enter your feedback: "
+            ).strip()
+
     resume_command = Command(
         resume={
             "decision": student_input,
