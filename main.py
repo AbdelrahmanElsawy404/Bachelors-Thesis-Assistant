@@ -18,6 +18,7 @@ class ResearchState(TypedDict):
     revision_count: int
     max_revisions: int
     student_decision: str
+    student_feedback: str 
 
 
 def validate_input(state: ResearchState):
@@ -86,13 +87,14 @@ def revise_outline(state: ResearchState):
 
 
 def student_review(state: ResearchState):
-    decision = interrupt({
+    response = interrupt({
         "outline": state["outline"],
         "outline_approved": state["outline_approved"],
         "review_feedback": state["review_feedback"],
     })
     return {
-        "student_decision": decision
+        "student_decision": response["decision"],
+        "student_feedback": response["feedback"]
     }
 
 def route_after_review(state: ResearchState):
@@ -150,7 +152,8 @@ inputs: ResearchState = {
     "review_feedback": "",
     "revision_count": 0,
     "max_revisions": 2,
-    "student_decision": "pending"
+    "student_decision": "pending",
+    "student_feedback": "",
 }
 
 config = {
@@ -182,7 +185,19 @@ if "student_review" in snapshot.next:
             "Enter student decision (approved/rejected): "
         ).strip().lower()
 
-    resume_command = Command(resume=student_input)
+    student_feedback = ""
+
+    if student_input == "rejected":
+        student_feedback = input(
+            "Enter your feedback: "
+        ).strip()
+
+    resume_command = Command(
+        resume={
+            "decision": student_input,
+            "feedback": student_feedback
+        }
+    )
 
     for update in graph.stream(
         resume_command,
