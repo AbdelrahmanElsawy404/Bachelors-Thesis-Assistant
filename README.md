@@ -13,11 +13,13 @@ A learning project for building a bachelor's thesis assistant for Computer Scien
 - Pause for student approval and feedback.
 - Resume the workflow and apply supported changes.
 
-The current version uses Python rules. Language models and source processing are planned.
+Outline generation uses GPT-6 Astra through Codex CLI with structured JSON output and local validation. Review and supported student revisions still use Python rules. Source processing is planned.
 
 ## Run
 
 Requires Python 3.13.
+
+Requires Codex CLI installed, signed in, and access to `gpt-6-astra`. Model requests use your account's available quota.
 
 ```bash
 git clone https://github.com/AbdelrahmanElsawy404/Bachelors-Thesis-Assistant.git
@@ -36,7 +38,7 @@ State is kept in memory only while the program is running.
 
 ## Next Steps
 
-- Connect language models.
+- Add model-based planning and critique.
 - Process sources and citations.
 - Add worker agents and evidence review.
 - Export student-approved reports.

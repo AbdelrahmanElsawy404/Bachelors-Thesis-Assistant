@@ -1,6 +1,8 @@
 
 from thesis_assistant.state import ResearchState
 from langgraph.types import interrupt
+from thesis_assistant.models import ask_astra, parse_outline_response
+from thesis_assistant.prompts import build_outline_prompt
 
 
 # =========================
@@ -36,12 +38,13 @@ def prepare_brief(state: ResearchState):
 
 
 def create_outline(state: ResearchState):
-    outline = (
-        f"{state['brief']}\n\n"
-        "Introduction\n"
-        "Background\n"
-        "Conclusion"
-    )
+    brief = state["brief"]
+
+    prompt = build_outline_prompt(brief)
+
+    response = ask_astra(prompt)
+
+    outline = parse_outline_response(response)
 
     return {"outline": outline}
 
