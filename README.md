@@ -18,19 +18,7 @@ The current version does not use language models or process research sources yet
 
 ## Workflow
 
-```mermaid
-flowchart TD
-    start["START"] --> validate["Validate input"]
-    validate -->|Valid| brief["Prepare brief"]
-    validate -->|Invalid| finish["END"]
-    brief --> outline["Create outline"]
-    outline --> review["Review outline"]
-    review -->|Approved or revision limit reached| finish
-    review -->|Rejected and revisions remain| revise["Revise outline"]
-    revise --> review
-```
-
-Reaching END means execution has finished. The `outline_approved` field indicates whether the outline passed the demo review.
+<img width="1428" height="439" alt="image" src="https://github.com/user-attachments/assets/ac5d489a-0e17-48f4-9a89-d71b047ffaac" />
 
 ## Run Locally
 
