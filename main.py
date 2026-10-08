@@ -19,6 +19,7 @@ class ResearchState(TypedDict):
     max_revisions: int
     student_decision: str
     student_feedback: str 
+    revision_request: str
 
 
 def validate_input(state: ResearchState):
@@ -107,6 +108,22 @@ def route_after_review(state: ResearchState):
     return "revise_outline"
 
 
+def prepare_revision_request(state: ResearchState):
+    revision_request = (
+        f"Current outline:\n{state['outline']}\n\n"
+        f"Student feedback:\n{state['student_feedback']}"
+    )
+    return {
+        "revision_request": revision_request
+    }
+
+
+def route_after_student_review(state: ResearchState):
+    if state["student_decision"]=="approved":
+        return END
+    if state["student_decision"]=="rejected":
+        return "prepare_revision_request"
+
 builder = StateGraph(ResearchState)
 
 
@@ -117,6 +134,7 @@ builder.add_node("create_outline", create_outline)
 builder.add_node("review_outline", review_outline)
 builder.add_node("revise_outline", revise_outline)
 builder.add_node("student_review", student_review)
+builder.add_node("prepare_revision_request",prepare_revision_request)
 
 ############# Create edges ############# 
 
@@ -131,9 +149,12 @@ builder.add_conditional_edges(
     "review_outline",
     route_after_review
 )
+builder.add_conditional_edges(
+    "student_review",
+    route_after_student_review)
 
 builder.add_edge("revise_outline", "review_outline")
-builder.add_edge("student_review", END)
+builder.add_edge("prepare_revision_request", END)
 
 
 
@@ -154,6 +175,7 @@ inputs: ResearchState = {
     "max_revisions": 2,
     "student_decision": "pending",
     "student_feedback": "",
+    "revision_request": "",
 }
 
 config = {
