@@ -1,37 +1,14 @@
 
 import argparse
+import json
 import subprocess
 
-
-def call_antigravity(prompt: str, model: str) -> str:
-    command = [
-        "agy",
-        "--model", model,
-        "--output-format", "text",
-        "-p", prompt,
-    ]
-
-    result = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=180,
-    )
-
-    response = result.stdout.strip()
-
-    if not response:
-        raise RuntimeError(
-            "Antigravity returned an empty response."
-        )
-
-    return response
+from thesis_assistant.models import call_antigravity
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Test Antigravity CLI with a selected model."
+        description="Test Antigravity CLI."
     )
 
     parser.add_argument(
@@ -60,7 +37,10 @@ if __name__ == "__main__":
     """
 
     try:
-        response = call_antigravity(prompt, args.model)
+        response = call_antigravity(
+            prompt=prompt,
+            model=args.model,
+        )
 
         print("=== Antigravity Response ===")
         print(f"Model: {args.model}")
@@ -69,14 +49,16 @@ if __name__ == "__main__":
 
     except subprocess.CalledProcessError as error:
         print("Antigravity execution failed.")
-        print("Error details:")
         print(error.stderr)
 
     except subprocess.TimeoutExpired:
-        print("Error: Antigravity request timed out after 180 seconds.")
+        print("Antigravity request timed out.")
+
+    except json.JSONDecodeError as error:
+        print(f"Invalid JSON response: {error}")
 
     except FileNotFoundError:
-        print("Error: Antigravity CLI (agy) was not found.")
+        print("Antigravity CLI (agy) was not found.")
 
     except RuntimeError as error:
         print(f"Error: {error}")

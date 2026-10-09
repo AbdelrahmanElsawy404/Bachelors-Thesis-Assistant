@@ -13,13 +13,16 @@ A learning project for building a bachelor's thesis assistant for Computer Scien
 - Pause for student approval and feedback.
 - Resume the workflow and apply supported changes.
 
-Outline generation uses a configurable model through Codex CLI, with structured JSON output and local validation. Review and supported student revisions still use Python rules. Source processing is planned.
+Outline generation supports Codex CLI and Antigravity CLI, with configurable models, structured JSON output, and local validation. Review and supported student revisions still use Python rules. Source processing is planned.
 
 ## Run
 
-Requires Python 3.13.
+Requires Python 3.13 and the selected CLI installed and authenticated, with access to the selected model. Requests use your account's available quota.
 
-Requires Codex CLI installed, signed in, and access to the selected model. The default planner model is `gpt-6-astra`. Model requests use your account's available quota.
+The default provider is Codex. When no model is specified, the selected provider uses:
+
+- Codex: `gpt-6-astra`
+- Antigravity: `gemini-3.8-flash-medium`
 
 ```bash
 git clone https://github.com/AbdelrahmanElsawy404/Bachelors-Thesis-Assistant.git
@@ -30,10 +33,11 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Select the planner model with `--planner-model`:
+Select the planner provider and model:
 
 ```bash
-python main.py --planner-model gpt-6-astra
+python main.py --planner-provider codex --planner-model gpt-6-astra
+python main.py --planner-provider antigravity --planner-model gemini-3.8-flash-medium
 ```
 
 Choose `approved` or `rejected`.

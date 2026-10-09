@@ -2,6 +2,7 @@
 import argparse
 import json
 import subprocess
+from pathlib import Path
 
 from thesis_assistant.models import (
     call_codex,
@@ -28,10 +29,20 @@ if __name__ == "__main__":
         "Description: Comparing how AI tools support software testing."
     )
 
+    schema_path = (
+        Path(__file__).resolve().parent
+        / "thesis_assistant"
+        / "outline_schema.json"
+    )
+
     try:
         prompt = build_outline_prompt(brief)
 
-        response = call_codex(prompt, args.model)
+        response = call_codex(
+            prompt=prompt,
+            model=args.model,
+            schema_path=schema_path,
+        )
 
         outline = parse_outline_response(response)
 
