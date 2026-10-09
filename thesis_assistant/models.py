@@ -4,13 +4,13 @@ import subprocess
 from pathlib import Path
 
 
-def ask_astra(prompt: str) -> str:
+def call_codex(prompt: str, model: str) -> str:
     schema_path = Path(__file__).with_name("outline_schema.json")
 
     command = [
         "codex",
         "exec",
-        "--model", "gpt-6-astra",
+        "--model", model,
         "--sandbox", "read-only",
         "--ephemeral",
         "--color", "never",
@@ -30,7 +30,7 @@ def ask_astra(prompt: str) -> str:
     response = result.stdout.strip()
 
     if not response:
-        raise RuntimeError("Astra returned an empty response.")
+        raise RuntimeError("Codex returned an empty response.")
 
     return response
 

@@ -1,8 +1,11 @@
 
 from thesis_assistant.state import ResearchState
 from langgraph.types import interrupt
-from thesis_assistant.models import ask_astra, parse_outline_response
+from thesis_assistant.models import call_codex, parse_outline_response
 from thesis_assistant.prompts import build_outline_prompt
+
+from langchain_core.runnables import RunnableConfig
+
 
 
 # =========================
@@ -37,12 +40,14 @@ def prepare_brief(state: ResearchState):
     return {"brief": brief}
 
 
-def create_outline(state: ResearchState):
+def create_outline(state: ResearchState, config: RunnableConfig):
     brief = state["brief"]
+
+    planner_model = config["configurable"]["planner_model"]
 
     prompt = build_outline_prompt(brief)
 
-    response = ask_astra(prompt)
+    response = call_codex(prompt, planner_model)
 
     outline = parse_outline_response(response)
 

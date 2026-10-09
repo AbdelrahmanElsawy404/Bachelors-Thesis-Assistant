@@ -13,13 +13,13 @@ A learning project for building a bachelor's thesis assistant for Computer Scien
 - Pause for student approval and feedback.
 - Resume the workflow and apply supported changes.
 
-Outline generation uses GPT-6 Astra through Codex CLI with structured JSON output and local validation. Review and supported student revisions still use Python rules. Source processing is planned.
+Outline generation uses a configurable model through Codex CLI, with structured JSON output and local validation. Review and supported student revisions still use Python rules. Source processing is planned.
 
 ## Run
 
 Requires Python 3.13.
 
-Requires Codex CLI installed, signed in, and access to `gpt-6-astra`. Model requests use your account's available quota.
+Requires Codex CLI installed, signed in, and access to the selected model. The default planner model is `gpt-6-astra`. Model requests use your account's available quota.
 
 ```bash
 git clone https://github.com/AbdelrahmanElsawy404/Bachelors-Thesis-Assistant.git
@@ -28,6 +28,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python main.py
+```
+
+Select the planner model with `--planner-model`:
+
+```bash
+python main.py --planner-model gpt-6-astra
 ```
 
 Choose `approved` or `rejected`.

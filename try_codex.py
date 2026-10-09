@@ -1,11 +1,28 @@
-import subprocess
-import json
 
-from thesis_assistant.models import ask_astra, parse_outline_response
+import argparse
+import json
+import subprocess
+
+from thesis_assistant.models import (
+    call_codex,
+    parse_outline_response,
+)
 from thesis_assistant.prompts import build_outline_prompt
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Test Codex CLI with a selected model."
+    )
+
+    parser.add_argument(
+        "--model",
+        required=True,
+        help="Codex model identifier",
+    )
+
+    args = parser.parse_args()
+
     brief = (
         "Research topic: AI in Software Testing\n"
         "Description: Comparing how AI tools support software testing."
@@ -14,11 +31,13 @@ if __name__ == "__main__":
     try:
         prompt = build_outline_prompt(brief)
 
-        response = ask_astra(prompt)
+        response = call_codex(prompt, args.model)
 
         outline = parse_outline_response(response)
 
-        print("=== Astra Generated Outline ===")
+        print("=== Codex Generated Outline ===")
+        print(f"Model: {args.model}")
+        print()
         print(outline)
 
     except subprocess.CalledProcessError as error:
@@ -27,7 +46,7 @@ if __name__ == "__main__":
         print(error.stderr)
 
     except subprocess.TimeoutExpired:
-        print("Error: Astra request timed out after 180 seconds.")
+        print("Error: Codex request timed out after 180 seconds.")
 
     except json.JSONDecodeError as error:
         print(f"Error: Invalid JSON response: {error}")

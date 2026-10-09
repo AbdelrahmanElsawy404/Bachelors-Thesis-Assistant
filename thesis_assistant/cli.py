@@ -4,6 +4,7 @@ from thesis_assistant.graph import build_graph
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
+import argparse
 
 def main():
 
@@ -33,10 +34,23 @@ def main():
         "student_revision_status": "pending",
     }
 
+    parser = argparse.ArgumentParser(
+    description="Bachelor Thesis Assistant"
+    )
+
+    parser.add_argument(
+    "--planner-model",
+    default="gpt-6-astra",
+    help="Model used for thesis outline planning",
+    )
+
+    args = parser.parse_args()
+
     # Configuration
     config = {
         "configurable": {
-            "thread_id": "demo-1"
+            "thread_id": "demo-1",
+            "planner_model": args.planner_model,
         }
     }
 
