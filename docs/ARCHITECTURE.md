@@ -15,6 +15,9 @@ selected model, checks it with Python rules, and pauses for student feedback.
 LangGraph manages execution and in-memory checkpoints. There is currently no
 source retrieval, model-based critic, worker coordination, or web API.
 
+A separate `try_rag.py` experiment now reads PDF pages into LangChain `Document`
+objects with source metadata. It is not yet connected to the application graph.
+
 ## Current code organization
 
 The application uses a flat Python package, `thesis_assistant`.
@@ -31,7 +34,9 @@ The application uses a flat Python package, `thesis_assistant`.
 | `thesis_assistant/prompts.py` | Builds the outline prompt from the research brief. |
 | `thesis_assistant/outline_schema.json` | JSON output shape requested from the model. |
 | `try_codex.py`, `try_antigravity.py` | Standalone manual experiments that call the selected CLI provider. |
-| `requirements.txt` | Currently declares `langgraph==1.2.12`. |
+| `try_rag.py` | Standalone PDF-loading experiment using `PdfReader` and LangChain `Document` objects. |
+| `requirements.txt` | Pins the current dependencies: `langgraph`, `langchain-core`, and `pypdf`. |
+| `docs/ai_software_testing.pdf` | Local sample research paper used by the RAG experiment; excluded from Git. |
 | `docs/diagrams/` | Architecture illustrations; the existing planned-architecture image describes future work. |
 
 The main dependency direction is `main → cli → graph → nodes/routing`.
@@ -115,25 +120,36 @@ The standalone experiments catch selected errors. Automatic retries and recovery
 routes are not implemented. Prompts ask models not to use tools or inspect or
 modify files; prompt instructions alone are not an execution sandbox.
 
-## Planned RAG components
+## RAG: implemented loading and planned retrieval
 
 **Decision:** use LangChain components for document retrieval and LangGraph for
-workflow control. Develop a standalone one-PDF experiment before integrating it
-into the application graph.
+workflow control. Develop and evaluate a standalone one-PDF experiment before
+integrating it into the application graph.
 
-| Packages | Planned responsibility |
-| --- | --- |
-| `langchain-core` | `Document` objects containing text and source metadata; already used by the application for `RunnableConfig`. |
-| `langchain-community`, `pypdf` | Page-based PDF loading with `PyPDFLoader`. |
-| `langchain-text-splitters` | Chunking with `RecursiveCharacterTextSplitter`. |
-| `langchain-huggingface`, `sentence-transformers` | Local embeddings through `HuggingFaceEmbeddings`. |
-| `langchain-chroma`, `chromadb` | Persistent local vector storage and retrieval. |
-| `langgraph` | Connect retrieval and generation to the existing workflow. |
+| Packages | Responsibility | Status |
+| --- | --- | --- |
+| `langchain-core` | `Document` objects containing text and source metadata; also supplies `RunnableConfig` for the application. | Implemented |
+| `pypdf` | Read PDF pages with `PdfReader`; create one `Document` per page. | Implemented in `try_rag.py` |
+| `langchain-text-splitters` | Chunking with `RecursiveCharacterTextSplitter`. | Planned |
+| `langchain-huggingface`, `sentence-transformers` | Local embeddings through `HuggingFaceEmbeddings`. | Planned |
+| `langchain-chroma`, `chromadb` | Persistent local vector storage and retrieval. | Planned |
+| `langgraph` | Connect retrieval and generation to the existing workflow. | RAG integration planned |
 
-RAG dependencies have not yet been added to `requirements.txt`. The embedding
-model, source PDF, chunk settings, and retrieval settings are still to be chosen
-and evaluated. The initial PDF loader is `pypdf`; PyMuPDF is an alternative to
-evaluate if extraction quality requires it.
+The loading experiment uses the 31-page paper *Software Testing with Large
+Language Models: Survey, Landscape, and Vision*, stored locally at
+`docs/ai_software_testing.pdf`. Each `Document` stores page text and metadata:
+`source`, zero-based `page`, and `total_pages`. Extraction falls back to an empty
+string when no text is returned. Text order and table extraction still need
+quality checks before relying on the content as evidence.
+
+`langchain-core` and `pypdf` are now declared in `requirements.txt`. The experiment
+uses `pypdf` directly instead of `PyPDFLoader` from the discontinued
+`langchain-community` package. See the
+[official sunset announcement](https://github.com/langchain-ai/langchain-community/issues/674).
+PyMuPDF remains an alternative to evaluate if extraction quality requires it.
+The embedding model, chunk settings, and retrieval settings are still to be
+chosen and evaluated. The diagram below shows the target RAG flow; only page
+loading has been implemented so far.
 
 ```mermaid
 flowchart LR
@@ -189,7 +205,7 @@ student review remain necessary parts of the design.
 
 ## Implementation sequence
 
-1. Load a PDF and inspect page text and metadata.
+1. **Completed in the standalone experiment:** load a PDF and inspect page text and metadata.
 2. Split pages into chunks and inspect overlap and source preservation.
 3. Create local embeddings and persist a Chroma collection.
 4. Test retrieval independently of generation.
