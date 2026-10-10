@@ -15,6 +15,8 @@ A learning project for building a bachelor's thesis assistant for Computer Scien
 
 Outline generation supports Codex CLI and Antigravity CLI, with configurable models, structured JSON output, and local validation. Review and supported student revisions still use Python rules. Source processing is planned.
 
+See [Architecture](docs/ARCHITECTURE.md) for the current workflow, module responsibilities, and planned RAG and agent roles.
+
 ## Run
 
 Requires Python 3.13 and the selected CLI installed and authenticated, with access to the selected model. Requests use your account's available quota.
