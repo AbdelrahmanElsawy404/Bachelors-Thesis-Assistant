@@ -1,7 +1,9 @@
 from pypdf import PdfReader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoTokenizer
+from sentence_transformers import CrossEncoder
 
 
 # 1. Read the PDF
@@ -26,13 +28,13 @@ for page_number, page in enumerate(reader.pages):
     documents.append(document)
 
 
-# 2. Load the tokenizer
-tokenizer = AutoTokenizer.from_pretrained(
-    "sentence-transformers/all-MiniLM-L6-v2"
-)
+# 2. Load tokenizer
+model_name = "sentence-transformers/all-MiniLM-L6-v2"
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 
-# 3. Split documents based on tokens
+# 3. Split documents into chunks
 text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
     tokenizer,
     chunk_size=220,
@@ -42,7 +44,7 @@ text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
 chunks = text_splitter.split_documents(documents)
 
 
-# 4. Count tokens in each chunk
+# 4. Check token lengths
 token_lengths = []
 
 for chunk in chunks:
@@ -54,38 +56,120 @@ for chunk in chunks:
 
     token_lengths.append(len(tokens))
 
-
-# 5. Print token statistics
-print("\n--- Token Statistics ---")
-
-print("Minimum tokens:", min(token_lengths))
-print("Maximum tokens:", max(token_lengths))
-
 over_limit = sum(
     1 for length in token_lengths if length > 256
 )
 
+print("Number of pages:", len(documents))
+print("Number of chunks:", len(chunks))
+print("Maximum tokens:", max(token_lengths))
 print("Chunks exceeding 256 tokens:", over_limit)
 
-print("\nFirst 3 chunks token lengths:")
-
-for index, length in enumerate(token_lengths[:3]):
-    print(f"Chunk {index + 1}: {length} tokens")
+if over_limit > 0:
+    raise ValueError("Some chunks exceed the model token limit.")
 
 
-# 6. Print document and chunk statistics
-print("\nNumber of pages:", len(documents))
-print("Number of chunks:", len(chunks))
+# 5. Load embeddings model
+embeddings = HuggingFaceEmbeddings(
+    model_name=model_name,
+    encode_kwargs={"normalize_embeddings": True},
+)
 
 
-# 7. Inspect the first 3 chunks
-for index, chunk in enumerate(chunks[:3]):
-    print(f"\nChunk {index + 1}")
-    print("Length:", len(chunk.page_content))
-    print("Metadata:", chunk.metadata)
+# 6. Convert chunks to vectors
+texts = [chunk.page_content for chunk in chunks]
+
+vectors = embeddings.embed_documents(texts)
+
+print("\nNumber of vectors:", len(vectors))
+print("Vector dimensions:", len(vectors[0]))
 
 
-# 8. Print the complete text of the first 2 chunks
-for index, chunk in enumerate(chunks[:2]):
-    print(f"\n--- Full text of Chunk {index + 1} ---")
+# 7. Convert question to vector
+query = "Which software testing tasks most commonly use large language models?"
+
+query_vector = embeddings.embed_query(query)
+
+
+# 8. Calculate similarity
+results = []
+
+for chunk, vector in zip(chunks, vectors):
+    similarity = sum(
+        a * b for a, b in zip(query_vector, vector)
+    )
+
+    results.append((chunk, similarity))
+
+
+# 9. Sort results
+results.sort(
+    key=lambda item: item[1],
+    reverse=True,
+)
+
+
+# 10. Print top 3 results
+print("\n--- Top 3 Search Results ---")
+
+for rank, (chunk, score) in enumerate(results[:3], start=1):
+    print(f"\n--- Result {rank} ---")
+    print(f"Similarity: {score:.3f}")
+    print(f"Source: {chunk.metadata['source']}")
+    print(f"Page: {chunk.metadata['page'] + 1}")
+    print("Text:")
+    print(chunk.page_content)
+
+
+# 11. Select top 20 candidates
+candidates = results[:20]
+
+
+# 12. Load the reranker model
+reranker = CrossEncoder(
+    "cross-encoder/ms-marco-MiniLM-L6-v2"
+)
+
+
+# 13. Prepare query-document pairs
+pairs = [
+    (query, chunk.page_content)
+    for chunk, similarity in candidates
+]
+
+
+# 14. Predict reranking scores
+rerank_scores = reranker.predict(pairs)
+
+
+# 15. Combine candidates with reranking scores
+reranked_results = []
+
+for (chunk, similarity), rerank_score in zip(
+    candidates, rerank_scores
+):
+    reranked_results.append(
+        (chunk, similarity, float(rerank_score))
+    )
+
+
+# 16. Sort by reranking score
+reranked_results.sort(
+    key=lambda item: item[2],
+    reverse=True,
+)
+
+
+# 17. Print top 3 reranked results
+print("\n--- Top 3 Reranked Results ---")
+
+for rank, (chunk, similarity, rerank_score) in enumerate(
+    reranked_results[:3], start=1
+):
+    print(f"\n--- Reranked Result {rank} ---")
+    print(f"Rerank score: {rerank_score:.3f}")
+    print(f"Original similarity: {similarity:.3f}")
+    print(f"Source: {chunk.metadata['source']}")
+    print(f"Page: {chunk.metadata['page'] + 1}")
+    print("Text:")
     print(chunk.page_content)
